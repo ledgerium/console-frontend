@@ -15,14 +15,12 @@
   </head>
 
   <body>
+    <br><br><br>
     <div class="ms-site-container">
       <div class="ms-hero ms-bg-fixed pb-4 wow zoomInRight animation-delay-5">
         <div id="carousel-shop" class="ms-carousel-shop carousel carousel-fade slide" data-ride="carousel">
           <div class="container">
-            <br><br><br>
-            <div class="term-container">
-              <span class="tx" id="txid-0"></span>
-            </div>
+            <div class="term-container"><span class="tx" id="txid-0"></span></div>
           </div>
         </div>
       </div>
@@ -32,8 +30,8 @@
 </html>
 
 <script>
-  const maxEntries = 15
-  const maxEntriesStart = 14
+  const maxEntries = 20
+  const maxEntriesStart = 19
 
   class feedTxs {
     constructor() {
@@ -42,7 +40,7 @@
       this.txShowQueue = [];
       this.storedTxs = new Array(512);
       this.storedTxsIndex = 0;
-      this.showInstantly = false;
+      this.showInstantly = true;
       this.queryCount = 0;
       this.txCount = 0;
       this.web3 = new Web3(new Web3.providers.WebsocketProvider('ws://toorak01.ledgerium.io:9000'));
@@ -67,11 +65,11 @@
       const self = this
       axios.get('https://toorak.ledgerium.io/blockexplorersvc/api/transactions')
         .then( async (response) => {
-          const transactions = response.data.data
-          for(let i = 0; i < 10; i++) {
+          const transactions = response.data.data.slice(0,19).reverse()
+          for(let i = 0; i < 20; i++) {
             const block = await this.web3.eth.getBlock(transactions[i].blockNumber)
             this.addTx(block, transactions[i])
-            await this.sleep(1500)
+            await this.sleep(100)
           }
         })
 
@@ -189,7 +187,6 @@
   }
 
   $( document ).ready(function() {
-
       setTimeout(()=>{
           var typed2 = new Typed('#txid-0', {
               strings: ["Listening for recent blockchain transactions"],
@@ -197,7 +194,7 @@
               cursorChar: '█',
               onComplete: function() {
                   setTimeout(()=>{
-                      var feed = new feedTxs();
+                      new feedTxs();
                   },500);
 
                   $('.typed-cursor').addClass("tx-cursor-next-line");
