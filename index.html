@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en"
+  <head>
+    <title> Live XLG Transactions </title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.11/typed.min.js" integrity="sha256-+izcH23qgte+aiGZRxk63BxGUyoQrAQZVoH2zKU9usM=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js" integrity="sha256-4iQZ6BVL4qNKlQ27TExEhBN1HFPvAvAMbFavKKosSWQ=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js" integrity="sha256-S1J4GVHHDMiirir9qsXWc8ZWw74PHHafpsHp5PXtjTs=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/preload.min.css">
+    <link rel="stylesheet" href="css/plugins.min.css">
+    <link rel="stylesheet" href="css/style.light-blue-500.min.css">
+  </head>
+
+  <body>
+    <div class="ms-site-container">
+      <div class="ms-hero ms-bg-fixed pb-4 wow zoomInRight animation-delay-5">
+        <div id="carousel-shop" class="ms-carousel-shop carousel carousel-fade slide" data-ride="carousel">
+          <div class="container">
+            <br><br><br>
+            <div class="term-container">
+              <span class="tx" id="txid-0"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>
+
+<script>
+  const maxEntries = 15
+  const maxEntriesStart = 14
+
+  class feedTxs {
+    constructor() {
+      this.lucaAddress = '0xEFA87544B7a6975c715f94905697B854ed28B9A8'.toLowerCase()
+      this.faucetAddress = '0xF232A4BF183cF17D09Bea23e19CEfF58Ad9dbFED'.toLowerCase()
+      this.txShowQueue = [];
+      this.storedTxs = new Array(512);
+      this.storedTxsIndex = 0;
+      this.showInstantly = false;
+      this.queryCount = 0;
+      this.txCount = 0;
+      this.web3 = new Web3(new Web3.providers.WebsocketProvider('ws://toorak01.ledgerium.io:9000'));
+      this.init();
+    }
+
+    init() {
+      this.txShowTimeout();
+      this.listen();
+      this.load();
+    }
+
+    sleep(ms) {
+      return new Promise((resolve) => {
+        setTimeout(()=>{
+          resolve()
+        }, ms)
+      })
+    }
+
+    load() {
+      const self = this
+      axios.get('https://toorak.ledgerium.io/blockexplorersvc/api/transactions')
+        .then( async (response) => {
+          const transactions = response.data.data
+          for(let i = 0; i < 10; i++) {
+            const block = await this.web3.eth.getBlock(transactions[i].blockNumber)
+            this.addTx(block, transactions[i])
+            await this.sleep(1500)
+          }
+        })
+
+    }
+
+    listen() {
+      const self = this
+      this.web3.eth.subscribe('newBlockHeaders', (error, result) => {
+        if(error) console.log(error)
+      })
+      .on('data', blockHeader => {
+        console.log(blockHeader.number)
+        self.web3.eth.getBlock(blockHeader.number)
+          .then(block => {
+            for(let i = 0; i < block.transactions.length; i++) {
+              self.web3.eth.getTransaction(block.transactions[i])
+                .then(tx => {
+                  self.addTx(block, tx)
+                })
+            }
+          })
+      })
+    }
+
+    txShowTimeout() {
+      setTimeout(()=>{
+        this.showTx();
+      }, 100);
+    }
+
+    showTx() {
+      if (this.txShowQueue.length == 0) {
+          this.txShowTimeout();
+          return;
+      }
+
+      var tx = this.txShowQueue.shift();
+      this.addTx(tx);
+    }
+
+    humanizeNumber(wei) {
+      return Web3.utils.fromWei(wei, 'ether')
+    }
+
+
+    addTx(block, tx) {
+      let html = ""
+      let trfrd = " transfered"
+      html += `<span class="tx-timestamp">${moment(block.timestamp*1000).format("HH:mm:ss")}</span>`
+      html += this.randomPause()
+
+      if(tx.to.toLowerCase() === this.lucaAddress) {
+        console.log(tx)
+        html+= `<span class="tx-amount"> Luca </span>`
+        html += this.randomPause()
+        html+= `<span class="tx-address tx-exchange"> New Record created with hash: ${tx.hash} </span>`
+        html += this.randomPause()
+      } else if (tx.from.toLowerCase() === this.faucetAddress) {
+        html += `<span class="tx-amount"> ${this.humanizeNumber(tx.value)}</span>`
+        html += this.randomPause()
+        html += '<span class="tx-symbol"> XLG </span>'
+        html += this.randomPause()
+        html += `<span class="tx-to">from</span>`
+        html += `<span class="tx-address tx-exchange"> Ledgerium Faucet </span>`
+        html += `<span class="tx-to">to</span>`
+        html += `<span class="tx-address tx-exchange"> ${tx.to} </span>`
+        html += this.randomPause()
+      } else {
+        html += `<span class="tx-amount"> ${this.humanizeNumber(tx.value)}</span>`
+        html += this.randomPause()
+        html += '<span class="tx-symbol"> XLG </span>'
+        html += this.randomPause()
+        html += `<span class="tx-to">from</span>`
+        html += `<span class="tx-address tx-exchange"> ${tx.from} </span>`
+        html += `<span class="tx-to">to</span>`
+        html += `<span class="tx-address tx-exchange"> ${tx.to} </span>`
+        html += this.randomPause()
+      }
+
+      $( ".term-container" ).append($('<span class="tx" id="txid-' + tx.hash + '"></span>'));
+      $('.term-container .typed-cursor').remove();
+      this.txCount++;
+      var _this = this;
+
+      var typed2 = new Typed('#txid-' + tx.hash, {
+          strings: [_this.showInstantly ? "`" + html + "`" : html],
+          fadeOut: true,
+          cursorChar: '█',
+          onComplete: function() {
+           // Remove top entry if there are too many
+           if ($('.term-container .tx').length > maxEntries) {
+               $('.term-container .tx:first').remove();
+           }
+           // Start new timeout for next line
+           _this.txShowTimeout();
+           $('.typed-cursor').addClass("tx-cursor-next-line");
+           if (_this.txCount >= maxEntriesStart && _this.txShowQueue.length <= 5) _this.showInstantly = false; // Disable instant shown
+           },
+      });
+    }
+
+    randomPause() {
+      if (this.showInstantly) return "";
+      const chanceOnPause = 0.4;
+      const minPause = 100;
+      const maxPause = 350;
+
+      if (Math.random() < 1 - chanceOnPause) return "";
+
+      const min = Math.ceil(minPause);
+      const max = Math.floor(maxPause);
+      return "^" + (Math.floor(Math.random() * (max - min + 1)) + min) + "";
+    }
+
+  }
+
+  $( document ).ready(function() {
+
+      setTimeout(()=>{
+          var typed2 = new Typed('#txid-0', {
+              strings: ["Listening for recent blockchain transactions"],
+              fadeOut: true,
+              cursorChar: '█',
+              onComplete: function() {
+                  setTimeout(()=>{
+                      var feed = new feedTxs();
+                  },500);
+
+                  $('.typed-cursor').addClass("tx-cursor-next-line");
+              },
+          });
+      },500);
+  });
+
+
+
+
+</script>
