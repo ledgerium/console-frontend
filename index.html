@@ -121,32 +121,40 @@
       html += `<span class="tx-timestamp">${moment(block.timestamp*1000).format("HH:mm:ss")}</span>`
       html += this.randomPause()
 
-      if(tx.to.toLowerCase() === this.lucaAddress) {
-        console.log(tx)
-        html+= `<span class="tx-amount"> Luca </span>`
+      if(!tx.to) {
+        html += `<span class="tx-amount"> Contract Created </span>`
         html += this.randomPause()
-        html+= `<span class="tx-address tx-exchange"> New Record created with hash: ${tx.hash} </span>`
+        html += `<span class="tx-to">by</span>`
         html += this.randomPause()
-      } else if (tx.from.toLowerCase() === this.faucetAddress) {
-        html += `<span class="tx-amount"> ${this.humanizeNumber(tx.value)}</span>`
-        html += this.randomPause()
-        html += '<span class="tx-symbol"> XLG </span>'
-        html += this.randomPause()
-        html += `<span class="tx-to">from</span>`
-        html += `<span class="tx-address tx-exchange"> Ledgerium Faucet </span>`
-        html += `<span class="tx-to">to</span>`
-        html += `<span class="tx-address tx-exchange"> ${tx.to} </span>`
-        html += this.randomPause()
-      } else {
-        html += `<span class="tx-amount"> ${this.humanizeNumber(tx.value)}</span>`
-        html += this.randomPause()
-        html += '<span class="tx-symbol"> XLG </span>'
-        html += this.randomPause()
-        html += `<span class="tx-to">from</span>`
         html += `<span class="tx-address tx-exchange"> ${tx.from} </span>`
-        html += `<span class="tx-to">to</span>`
-        html += `<span class="tx-address tx-exchange"> ${tx.to} </span>`
-        html += this.randomPause()
+      } else {
+        if(tx.to.toLowerCase() === this.lucaAddress) {
+          console.log(tx)
+          html += `<span class="tx-amount"> Luca </span>`
+          html += this.randomPause()
+          html += `<span class="tx-address tx-exchange"> New Record created with hash: ${tx.hash} </span>`
+          html += this.randomPause()
+        } else if (tx.from.toLowerCase() === this.faucetAddress) {
+          html += `<span class="tx-amount"> ${this.humanizeNumber(tx.value)}</span>`
+          html += this.randomPause()
+          html += '<span class="tx-symbol"> XLG </span>'
+          html += this.randomPause()
+          html += `<span class="tx-to">from</span>`
+          html += `<span class="tx-address tx-exchange"> Ledgerium Faucet </span>`
+          html += `<span class="tx-to">to</span>`
+          html += `<span class="tx-address tx-exchange"> ${tx.to} </span>`
+          html += this.randomPause()
+        } else {
+          html += `<span class="tx-amount"> ${this.humanizeNumber(tx.value)}</span>`
+          html += this.randomPause()
+          html += '<span class="tx-symbol"> XLG </span>'
+          html += this.randomPause()
+          html += `<span class="tx-to">from</span>`
+          html += `<span class="tx-address tx-exchange"> ${tx.from} </span>`
+          html += `<span class="tx-to">to</span>`
+          html += `<span class="tx-address tx-exchange"> ${tx.to} </span>`
+          html += this.randomPause()
+        }
       }
 
       $( ".term-container" ).append($('<span class="tx" id="txid-' + tx.hash + '"></span>'));
